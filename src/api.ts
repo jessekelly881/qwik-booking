@@ -2,7 +2,75 @@
  * API Service
  */
 
+/**
+ * We need Admins to be able to cancel bookings and add notes about the reason for this cancellation.
+
+
+
+Add a button to the /bookings/<id> page that reads ‘Cancel This Booking’.
+
+
+
+This button should only show on bookings that are NOT cancelled
+
+
+
+When clicked this button should:
+
+become hidden
+
+reveal a text input and 2 buttons, ‘Confirm Cancellation’ and ‘Do Not Cancel’.
+
+
+
+If the ‘Do Not Cancel’ button is clicked the page state should revert back to its previous state.
+
+
+
+If the ‘Confirm Cancellation’ is clicked the page should PUT to /bookings/<id>/cancellations
+
+The body of this put should be the value in the text input as JSON {“notes”: <text>}
+
+
+
+The api can respond with status codes:
+
+200 (success)
+
+400 (e.g. already cancelled)
+
+401 (unauthorized)
+
+404 (id not found)
+
+500
+
+
+
+On success the page should display the booking - buttons and text area should be hidden.
+
+
+It is important that the PUT request is made on the server, and not the client.
+
+We do NOT want the x-api-key header to be revealed.
+
+
+
+Pairing Expectations
+
+———————————-
+
+We do not need to arrive at a full solution. The point is to discuss how we approach a feature request like this.
+
+You will be leading this pairing session but it is perfectly acceptable to ask about the Qwik APIs etc.
+
+The aim of this exercise is to gauge communication and to b e able to discuss how you approach day to day coding.
+
+
+ */
+
 import {
+	HttpBody,
 	HttpClient,
 	HttpClientRequest,
 	HttpClientResponse,
@@ -118,3 +186,19 @@ export const getBookings = Effect.flatMap(
 			Effect.scoped,
 		),
 );
+
+export const cancelBooking = (id: number, notes: string) =>
+	Effect.gen(function* () {
+		const apiKey = yield* Config.string("X_API_KEY");
+		const body = yield* HttpBody.json({ notes });
+		yield* HttpClientRequest.put(
+			`https://traverse-assignment-api.esdee.workers.dev/bookings/${id}/cancellations`,
+		).pipe(
+			HttpClientRequest.setBody(body),
+			HttpClientRequest.setHeaders({
+				"Content-type": "application/json; charset=UTF-8",
+				"x-api-key": apiKey,
+			}),
+			HttpClient.fetchOk,
+		);
+	}).pipe(Effect.scoped);
